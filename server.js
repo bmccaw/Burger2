@@ -1,10 +1,11 @@
+require('dotenv').config()
 var express = require("express");
 var methodOverride = require('method-override');
 var path = require('path');
 
-var PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8080;
 
-var app = express();
+const app = express();
 
 // Parse application body
 app.use(express.urlencoded({ extended: true }));
@@ -14,22 +15,25 @@ app.use(express.json());
 app.use(methodOverride('_method'));
 
 // Set Handlebars.
-var exphbs = require("express-handlebars");
+const exphbs = require("express-handlebars");
 
 app.engine("handlebars", exphbs({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");
+
+
+// Requiring our models for syncing
+const db = require("./models");
 
 // Serve static content for the app from the "public" directory in the application directory.
 // app.use(express.static("public"));
 app.use(express.static(path.join(__dirname, '/public')));
 
-// Import routes and give the server access to them.
-var routes = require("./controllers/burgers_controller.js");
+require('./routes/api-routes')(app);
 
-app.use(routes);
-
-// Start our server so that it can begin listening to client requests.
-app.listen(PORT, function() {
-  // Log (server-side) when our server has started
-  console.log("Server listening on: http://localhost:" + PORT);
+// Syncing our sequelize models and then starting our Express app
+// =============================================================
+db.sequelize.sync({ force: true }).then(function() {
+  app.listen(PORT, function() {
+    console.log("App listening on PORT " + PORT);
+  });
 });
